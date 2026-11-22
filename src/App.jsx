@@ -1,19 +1,33 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
   Compass,
   HeartHandshake,
+  MessageCircle,
   Menu,
+  Pause,
+  Play,
   Search,
   ShieldCheck,
   Sparkles,
   Star,
   X,
 } from 'lucide-react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Keyboard, Navigation, Pagination, A11y } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/navigation'
+import 'swiper/css/pagination'
 import {
   BrowserRouter,
   Link,
+  NavLink,
   Route,
   Routes,
   useNavigate,
@@ -25,16 +39,14 @@ import { packages } from './data/packages'
 import { testimonials } from './data/testimonials'
 import './App.css'
 
+gsap.registerPlugin(ScrollTrigger)
+
 const currentYear = new Date().getFullYear()
 
 function Logo() {
   return (
     <Link className="logo" to="/" aria-label="TRAMPER India home">
-      <span className="logo-mark">T</span>
-      <span>
-        <strong>TRAMPER</strong>
-        <small>INDIA</small>
-      </span>
+      <img className="logo-image" src="/assets/tramper-logo.png" alt="TRAMPER India — Go Somewhere New" />
     </Link>
   )
 }
@@ -43,7 +55,16 @@ function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [scrolled, setScrolled] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const updateHeader = () => setScrolled(window.scrollY > 24)
+    updateHeader()
+    window.addEventListener('scroll', updateHeader, { passive: true })
+    return () => window.removeEventListener('scroll', updateHeader)
+  }, [])
+
   const suggestions = useMemo(() => {
     if (!query.trim()) return []
     return packages
@@ -62,14 +83,19 @@ function Header() {
   }
 
   return (
-    <header className="site-header">
+    <header className={scrolled ? 'site-header is-scrolled' : 'site-header'}>
       <div className="header-inner container">
         <Logo />
         <nav className={menuOpen ? 'main-nav is-open' : 'main-nav'} aria-label="Main navigation">
           {navItems.map((item) => (
-            <Link key={item.href} to={item.href} onClick={() => setMenuOpen(false)}>
+            <NavLink
+              key={item.href}
+              to={item.href}
+              end={item.href === '/'}
+              onClick={() => setMenuOpen(false)}
+            >
               {item.label}
-            </Link>
+            </NavLink>
           ))}
           <Link className="mobile-enquire" to="/contact" onClick={() => setMenuOpen(false)}>
             Enquire now
@@ -96,10 +122,23 @@ function Header() {
                 ))}
               </div>
             )}
+            {query.trim() && suggestions.length === 0 && (
+              <div className="search-suggestions search-empty" role="status">
+                No matching journeys found
+              </div>
+            )}
           </div>
           <button className="icon-button mobile-search" onClick={() => setSearchOpen((value) => !value)} aria-label="Toggle search">
             <Search size={20} />
           </button>
+          <a
+            className="icon-button whatsapp-button"
+            href="https://wa.me/"
+            onClick={(event) => event.preventDefault()}
+            aria-label="WhatsApp TRAMPER"
+          >
+            <MessageCircle size={19} />
+          </a>
           <Link className="button button-small header-cta" to="/contact">Enquire now <ArrowRight size={16} /></Link>
           <button className="icon-button menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label={menuOpen ? 'Close menu' : 'Open menu'}>
             {menuOpen ? <X size={23} /> : <Menu size={23} />}
@@ -121,8 +160,27 @@ function SectionHeading({ eyebrow, title, copy }) {
 }
 
 function Hero() {
+  const heroRef = useRef(null)
+
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    tl.from('.hero .eyebrow', { y: 18, opacity: 0, duration: 0.55 })
+      .from('.hero h1', { y: 36, opacity: 0, duration: 0.75 }, '-=0.28')
+      .from('.hero-content p', { y: 20, opacity: 0, duration: 0.55 }, '-=0.38')
+      .from('.hero-actions', { y: 16, opacity: 0, duration: 0.55 }, '-=0.34')
+      .from('.hero-scroll', { opacity: 0, duration: 0.5 }, '-=0.15')
+
+    gsap.to('.hero-poster, .hero-video', {
+      yPercent: 8,
+      scale: 1.04,
+      ease: 'none',
+      scrollTrigger: { trigger: heroRef.current, start: 'top top', end: 'bottom top', scrub: true },
+    })
+  }, { scope: heroRef })
+
   return (
-    <section className="hero">
+    <section className="hero" ref={heroRef}>
       <img className="hero-poster" src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=85" alt="" />
       <video className="hero-video" autoPlay muted loop playsInline poster="/media/tramper-hero-poster.jpg" aria-hidden="true">
         <source src="/media/tramper-hero.mp4" type="video/mp4" />
@@ -168,7 +226,7 @@ const benefits = [
 ]
 
 function Benefits() {
-  return <section className="section"><div className="container"><SectionHeading eyebrow="WHY TRAMPER" title="Travel with intention" copy="Placeholder brand claims for client review. Every journey begins with a better way of seeing the world." /><div className="benefit-grid">{benefits.map(([Icon, title, copy]) => <article className="benefit-card" key={title}><Icon size={28} strokeWidth={1.5} /><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
+  return <section className="section benefits-section"><div className="container"><SectionHeading eyebrow="WHY TRAMPER" title="Why Travel With TRAMPER?" copy="Placeholder brand claims for client review. Every journey begins with a better way of seeing the world." /><div className="benefit-grid">{benefits.map(([Icon, title, copy]) => <article className="benefit-card" key={title}><span className="benefit-icon"><Icon size={25} strokeWidth={1.7} /></span><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
 }
 
 function Destinations() {
@@ -176,15 +234,15 @@ function Destinations() {
 }
 
 function AboutPreview() {
-  return <section className="section section-cream"><div className="container about-preview"><div className="about-image"><img src="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1200&q=85" alt="Travellers walking through a mountain landscape" loading="lazy" /></div><div className="about-copy"><SectionHeading eyebrow="THE TRAMPER WAY" title="More than just travel" copy="TRAMPER India is a placeholder for a considered travel company helping curious people find their next perspective. Official company information will be added here." /><Link className="button button-dark" to="/about">Learn more <ArrowRight size={17} /></Link></div></div></section>
+  return <section className="section section-cream"><div className="container about-preview"><div className="about-image"><img src="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1400&q=85" alt="Travellers walking through a mountain landscape" loading="lazy" /><span className="about-image-label">Journey beyond the ordinary</span></div><div className="about-copy"><SectionHeading eyebrow="THE TRAMPER WAY" title="More Than Just Travel" copy="TRAMPER India is a placeholder for a considered travel company helping curious people find their next perspective. Official company information will be added here." /><ul className="about-highlights"><li>Thoughtfully planned journeys</li><li>Curiosity-led local experiences</li><li>Personal assistance throughout</li></ul><Link className="button button-dark" to="/about">Learn more <ArrowRight size={17} /></Link></div></div></section>
 }
 
 function Gallery() {
-  return <section className="section gallery-section"><div className="container"><SectionHeading eyebrow="FIELD NOTES" title="Moments worth exploring" /><div className="gallery-grid">{galleryImages.slice(0, 6).map((image) => <img key={image.id} src={image.src} alt={image.alt} loading="lazy" />)}</div><div className="section-link"><Link className="text-link" to="/gallery">Visit the gallery <ArrowRight size={17} /></Link></div></div></section>
+  return <section className="section gallery-section"><div className="container"><SectionHeading eyebrow="FIELD NOTES" title="Moments Worth Exploring" /><div className="gallery-rows"><div className="gallery-row gallery-row-one">{galleryImages.slice(0, 3).map((image) => <figure key={image.id}><img src={image.src} alt={image.alt} loading="lazy" /></figure>)}</div><div className="gallery-row gallery-row-two">{galleryImages.slice(3, 6).map((image) => <figure key={image.id}><img src={image.src} alt={image.alt} loading="lazy" /></figure>)}</div></div><div className="section-link"><Link className="text-link" to="/gallery">Visit the gallery <ArrowRight size={17} /></Link></div></div></section>
 }
 
 function Testimonials() {
-  return <section className="section testimonials-section"><div className="container"><SectionHeading eyebrow="TRAVELLER STORIES" title="Stories from our travellers" copy="Sample placeholder reviews for development only. Approved testimonials will replace these in a later phase." /><div className="testimonial-grid">{testimonials.map((item) => <article className="testimonial" key={item.id}><div className="stars">{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={15} fill="currentColor" />)}</div><blockquote>“{item.quote}”</blockquote><p>{item.name} <span>{item.trip}</span></p></article>)}</div></div></section>
+  return <section className="section testimonials-section"><div className="container"><SectionHeading eyebrow="TRAVELLER STORIES" title="Stories From Our Travellers" copy="Sample placeholder reviews for development only. Approved testimonials will replace these in a later phase." /><div className="testimonial-grid">{testimonials.map((item) => <article className="testimonial" key={item.id}><div className="testimonial-rating"><div className="stars">{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={14} fill="currentColor" />)}</div><span>Placeholder</span></div><blockquote>“{item.quote}”</blockquote><div className="traveller"><span className="traveller-avatar" aria-hidden="true">{item.name.charAt(0)}</span><p>{item.name}<span>{item.trip}</span></p></div></article>)}</div></div></section>
 }
 
 function Enquiry() {

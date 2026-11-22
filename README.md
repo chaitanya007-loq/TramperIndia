@@ -25,7 +25,7 @@ npm run lint
 - Placeholder testimonials: `src/data/testimonials.js`
 - Reusable homepage and route components: `src/App.jsx`
 - Responsive visual system: `src/App.css`
-- Official logo: replace the temporary text mark in `Logo()` with the supplied asset.
+- Official logo: `public/assets/tramper-logo.png`, used by the shared `Logo()` component.
 - Hero media: add approved files at `public/media/tramper-hero.mp4` and `public/media/tramper-hero-poster.jpg`.
 
 All external images and contact details are development placeholders. GSAP, Swiper, Supabase, enquiry handling, and admin functionality are intentionally deferred to later phases.
