@@ -1,6 +1,6 @@
 # TRAMPER India
 
-Stage 1 frontend skeleton for the TRAMPER India travel website.
+Frontend for the TRAMPER India travel website.
 
 ## Run locally
 
@@ -28,4 +28,4 @@ npm run lint
 - Official logo: `public/assets/tramper-logo.png`, used by the shared `Logo()` component.
 - Hero media: add approved files at `public/media/tramper-hero.mp4` and `public/media/tramper-hero-poster.jpg`.
 
-All external images and contact details are development placeholders. GSAP, Swiper, Supabase, enquiry handling, and admin functionality are intentionally deferred to later phases.
+The project includes Stage 1–3 implementation: responsive homepage, data-driven sections, GSAP reveals, Swiper carousels, gallery lightbox, and a video-ready hero. Supabase, enquiry handling, and admin functionality are deferred.
