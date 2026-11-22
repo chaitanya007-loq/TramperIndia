@@ -37,6 +37,7 @@ import { destinations } from './data/destinations'
 import { galleryImages } from './data/gallery'
 import { packages } from './data/packages'
 import { testimonials } from './data/testimonials'
+import AdminApp from './admin/AdminApp'
 import './App.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -482,7 +483,18 @@ function PackagesPage() { return <StarterPage eyebrow="TRAMPER COLLECTION" title
 function PackageDetailsPage() { return <StarterPage eyebrow="YOUR NEXT JOURNEY" title="Package details" copy="This starter route is ready for dynamic package detail content." /> }
 
 function App() {
-  return <BrowserRouter><Routes><Route path="/" element={<Home />} /><Route path="/packages" element={<PackagesPage />} /><Route path="/packages/:slug" element={<PackageDetailsPage />} /><Route path="/about" element={<StarterPage eyebrow="OUR STORY" title="About TRAMPER" copy="Official company story and values will be added here." />} /><Route path="/gallery" element={<StarterPage eyebrow="FIELD NOTES" title="Gallery" copy="A full gallery experience will be added here." />} /><Route path="/contact" element={<StarterPage eyebrow="LET'S TALK" title="Contact us" copy="The enquiry form will be connected to a real service in a later phase." />} /><Route path="/privacy" element={<StarterPage eyebrow="TRAMPER INDIA" title="Privacy policy" copy="Policy content will be supplied before launch." />} /><Route path="/terms" element={<StarterPage eyebrow="TRAMPER INDIA" title="Terms and conditions" copy="Terms content will be supplied before launch." />} /><Route path="*" element={<StarterPage eyebrow="404" title="That trail ends here" copy="The page you are looking for could not be found." />} /></Routes></BrowserRouter>
+  return <BrowserRouter><Routes>
+    <Route path="/admin/*" element={<AdminApp />} />
+    <Route path="/" element={<Home />} />
+    <Route path="/packages" element={<PackagesPage />} />
+    <Route path="/packages/:slug" element={<PackageDetailsPage />} />
+    <Route path="/about" element={<StarterPage eyebrow="OUR STORY" title="About TRAMPER" copy="Official company story and values will be added here." />} />
+    <Route path="/gallery" element={<StarterPage eyebrow="FIELD NOTES" title="Gallery" copy="A full gallery experience will be added here." />} />
+    <Route path="/contact" element={<StarterPage eyebrow="LET'S TALK" title="Contact us" copy="The enquiry form will be connected to a real service in a later phase." />} />
+    <Route path="/privacy" element={<StarterPage eyebrow="TRAMPER INDIA" title="Privacy policy" copy="Policy content will be supplied before launch." />} />
+    <Route path="/terms" element={<StarterPage eyebrow="TRAMPER INDIA" title="Terms and conditions" copy="Terms content will be supplied before launch." />} />
+    <Route path="*" element={<StarterPage eyebrow="404" title="That trail ends here" copy="The page you are looking for could not be found." />} />
+  </Routes></BrowserRouter>
 }
 
 export default App
