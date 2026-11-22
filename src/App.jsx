@@ -215,7 +215,49 @@ function PackageCard({ item }) {
 
 function FeaturedPackages() {
   const featured = packages.filter((item) => item.published && item.featured)
-  return <section className="section section-cream"><div className="container"><SectionHeading eyebrow="THE TRAMPER EDIT" title="Explore our featured adventures" copy="Development placeholder itineraries, ready to be replaced with approved TRAMPER journeys." /><div className="package-grid">{featured.map((item) => <PackageCard key={item.id} item={item} />)}</div><div className="section-link"><Link className="text-link" to="/packages">View all packages <ArrowRight size={17} /></Link></div></div></section>
+  const sectionRef = useRef(null)
+
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(sectionRef.current.querySelector('.section-heading'), {
+      y: 24, opacity: 0, duration: 0.7,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 82%', once: true },
+    })
+    gsap.from(sectionRef.current.querySelectorAll('.swiper-slide'), {
+      y: 30, opacity: 0, duration: 0.65, stagger: 0.12,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 76%', once: true },
+    })
+  }, { scope: sectionRef, dependencies: [featured.length] })
+
+  return (
+    <section className="section section-cream featured-section" ref={sectionRef}>
+      <div className="container">
+        <SectionHeading eyebrow="THE TRAMPER EDIT" title="Explore our featured adventures" copy="Development placeholder itineraries, ready to be replaced with approved TRAMPER journeys." />
+        {featured.length > 0 ? (
+          <>
+            <Swiper
+              className="package-swiper"
+              modules={[Navigation, Pagination, A11y, Keyboard]}
+              spaceBetween={18}
+              slidesPerView={1.08}
+              navigation={{ nextEl: '.package-next', prevEl: '.package-prev' }}
+              pagination={{ clickable: true, el: '.package-pagination' }}
+              keyboard={{ enabled: true }}
+              breakpoints={{ 681: { slidesPerView: 2 }, 1024: { slidesPerView: 3.25 }, 1280: { slidesPerView: 3.75 } }}
+              a11y={{ enabled: true }}
+            >
+              {featured.map((item) => <SwiperSlide key={item.id}><PackageCard item={item} /></SwiperSlide>)}
+            </Swiper>
+            <div className="carousel-controls package-controls">
+              <div className="package-pagination" />
+              {featured.length > 1 && <div className="carousel-arrows"><button className="carousel-arrow package-prev" aria-label="Previous featured packages"><ChevronLeft size={18} /></button><button className="carousel-arrow package-next" aria-label="Next featured packages"><ChevronRight size={18} /></button></div>}
+            </div>
+          </>
+        ) : <p className="empty-content" role="status">No featured journeys are currently published.</p>}
+        <div className="section-link"><Link className="text-link" to="/packages">View all packages <ArrowRight size={17} /></Link></div>
+      </div>
+    </section>
+  )
 }
 
 const benefits = [
@@ -226,31 +268,206 @@ const benefits = [
 ]
 
 function Benefits() {
-  return <section className="section benefits-section"><div className="container"><SectionHeading eyebrow="WHY TRAMPER" title="Why Travel With TRAMPER?" copy="Placeholder brand claims for client review. Every journey begins with a better way of seeing the world." /><div className="benefit-grid">{benefits.map(([Icon, title, copy]) => <article className="benefit-card" key={title}><span className="benefit-icon"><Icon size={25} strokeWidth={1.7} /></span><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
+  const sectionRef = useRef(null)
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(sectionRef.current.querySelector('.section-heading'), {
+      y: 24, opacity: 0, duration: 0.7,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 82%', once: true },
+    })
+    gsap.from(sectionRef.current.querySelectorAll('.benefit-card'), {
+      y: 28, opacity: 0, duration: 0.65, stagger: 0.12,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 72%', once: true },
+    })
+  }, { scope: sectionRef })
+
+  return <section className="section benefits-section" ref={sectionRef}><div className="container"><SectionHeading eyebrow="WHY TRAMPER" title="Why Travel With TRAMPER?" copy="Placeholder brand claims for client review. Every journey begins with a better way of seeing the world." /><div className="benefit-grid">{benefits.map(([Icon, title, copy]) => <article className="benefit-card" key={title}><span className="benefit-icon"><Icon size={25} strokeWidth={1.7} /></span><h3>{title}</h3><p>{copy}</p></article>)}</div></div></section>
 }
 
 function Destinations() {
-  return <section className="section destinations-section"><div className="container"><SectionHeading eyebrow="FIND YOUR HORIZON" title="Where will you go next?" /><div className="destination-grid">{destinations.map((item) => <Link className="destination-card" to={`/packages?destination=${encodeURIComponent(item.name)}`} key={item.id}><img src={item.image} alt={item.name} loading="lazy" /><div><span>{item.region}</span><h3>{item.name}</h3><p>{item.tagline}</p></div></Link>)}</div></div></section>
+  const sectionRef = useRef(null)
+  const trackRef = useRef(null)
+
+  useGSAP(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const mobile = window.matchMedia('(max-width: 1024px)').matches
+    if (reduced || mobile) return
+
+    const build = () => {
+      ScrollTrigger.getAll().forEach((trigger) => {
+        if (trigger.vars?.id === 'destination-pin') trigger.kill()
+      })
+      const track = trackRef.current
+      if (!track) return
+      const available = track.scrollWidth - window.innerWidth
+      if (available <= 8) return
+      gsap.to(track, {
+        x: -available,
+        ease: 'none',
+        scrollTrigger: {
+          id: 'destination-pin',
+          trigger: sectionRef.current,
+          start: 'top top',
+          end: () => `+=${track.scrollWidth - window.innerWidth + 180}`,
+          pin: true,
+          scrub: 0.8,
+          invalidateOnRefresh: true,
+        },
+      })
+    }
+
+    const frame = requestAnimationFrame(build)
+    const refresh = () => requestAnimationFrame(build)
+    window.addEventListener('resize', refresh)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener('resize', refresh)
+      ScrollTrigger.getAll().forEach((trigger) => {
+        if (trigger.vars?.id === 'destination-pin') trigger.kill()
+      })
+    }
+  }, { scope: sectionRef, dependencies: [destinations.length] })
+
+  return (
+    <section className="section destinations-section" ref={sectionRef}>
+      <div className="destination-heading-wrap"><div className="container"><SectionHeading eyebrow="FIND YOUR HORIZON" title="Where will you go next?" /></div></div>
+      <div className="destination-mobile">
+        <Swiper modules={[Navigation, Pagination, A11y, Keyboard]} slidesPerView={1.08} spaceBetween={12} navigation={{ nextEl: '.destination-next', prevEl: '.destination-prev' }} pagination={{ clickable: true, el: '.destination-pagination' }} keyboard={{ enabled: true }}>
+          {destinations.map((item) => (
+            <SwiperSlide key={item.id}>
+              <Link className="destination-card" to={`/packages?destination=${encodeURIComponent(item.name)}`}><img src={item.image} alt={item.name} loading="lazy" /><div><span>{item.region}</span><h3>{item.name}</h3><p>{item.tagline}</p></div></Link>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+        <div className="carousel-controls destination-controls"><div className="destination-pagination" /><div className="carousel-arrows"><button className="carousel-arrow destination-prev" aria-label="Previous destination"><ChevronLeft size={18} /></button><button className="carousel-arrow destination-next" aria-label="Next destination"><ChevronRight size={18} /></button></div></div>
+      </div>
+      <div className="destination-desktop"><div className="destination-track" ref={trackRef}>{destinations.map((item) => <Link className="destination-card" to={`/packages?destination=${encodeURIComponent(item.name)}`} key={item.id}><img src={item.image} alt={item.name} loading="lazy" /><div><span>{item.region}</span><h3>{item.name}</h3><p>{item.tagline}</p></div></Link>)}</div></div>
+    </section>
+  )
 }
 
 function AboutPreview() {
-  return <section className="section section-cream"><div className="container about-preview"><div className="about-image"><img src="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1400&q=85" alt="Travellers walking through a mountain landscape" loading="lazy" /><span className="about-image-label">Journey beyond the ordinary</span></div><div className="about-copy"><SectionHeading eyebrow="THE TRAMPER WAY" title="More Than Just Travel" copy="TRAMPER India is a placeholder for a considered travel company helping curious people find their next perspective. Official company information will be added here." /><ul className="about-highlights"><li>Thoughtfully planned journeys</li><li>Curiosity-led local experiences</li><li>Personal assistance throughout</li></ul><Link className="button button-dark" to="/about">Learn more <ArrowRight size={17} /></Link></div></div></section>
+  const sectionRef = useRef(null)
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(sectionRef.current.querySelector('.about-image'), {
+      x: -30, opacity: 0, duration: 0.8,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 78%', once: true },
+    })
+    gsap.from(sectionRef.current.querySelectorAll('.about-copy .section-heading, .about-highlights li, .about-copy .button'), {
+      y: 22, opacity: 0, duration: 0.6, stagger: 0.1,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 72%', once: true },
+    })
+    if (!window.matchMedia('(max-width: 680px)').matches) {
+      gsap.to(sectionRef.current.querySelector('.about-image img'), {
+        yPercent: -5, ease: 'none',
+        scrollTrigger: { trigger: sectionRef.current, start: 'top bottom', end: 'bottom top', scrub: true },
+      })
+    }
+  }, { scope: sectionRef })
+
+  return <section className="section section-cream" ref={sectionRef}><div className="container about-preview"><div className="about-image"><img src="https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1400&q=85" alt="Travellers walking through a mountain landscape" loading="lazy" /><span className="about-image-label">Journey beyond the ordinary</span></div><div className="about-copy"><SectionHeading eyebrow="THE TRAMPER WAY" title="More Than Just Travel" copy="TRAMPER India is a placeholder for a considered travel company helping curious people find their next perspective. Official company information will be added here." /><ul className="about-highlights"><li>Thoughtfully planned journeys</li><li>Curiosity-led local experiences</li><li>Personal assistance throughout</li></ul><Link className="button button-dark" to="/about">Learn more <ArrowRight size={17} /></Link></div></div></section>
 }
 
 function Gallery() {
-  return <section className="section gallery-section"><div className="container"><SectionHeading eyebrow="FIELD NOTES" title="Moments Worth Exploring" /><div className="gallery-rows"><div className="gallery-row gallery-row-one">{galleryImages.slice(0, 3).map((image) => <figure key={image.id}><img src={image.src} alt={image.alt} loading="lazy" /></figure>)}</div><div className="gallery-row gallery-row-two">{galleryImages.slice(3, 6).map((image) => <figure key={image.id}><img src={image.src} alt={image.alt} loading="lazy" /></figure>)}</div></div><div className="section-link"><Link className="text-link" to="/gallery">Visit the gallery <ArrowRight size={17} /></Link></div></div></section>
+  const [paused, setPaused] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(null)
+  const closeButtonRef = useRef(null)
+  const sectionRef = useRef(null)
+
+  useEffect(() => {
+    if (lightboxIndex === null) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    closeButtonRef.current?.focus()
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setLightboxIndex(null)
+      if (event.key === 'ArrowRight') setLightboxIndex((index) => (index + 1) % galleryImages.length)
+      if (event.key === 'ArrowLeft') setLightboxIndex((index) => (index - 1 + galleryImages.length) % galleryImages.length)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [lightboxIndex])
+
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(sectionRef.current.querySelector('.section-heading'), {
+      y: 24, opacity: 0, duration: 0.7,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 82%', once: true },
+    })
+  }, { scope: sectionRef })
+
+  const rowOne = [...galleryImages, ...galleryImages]
+  const rowTwo = [...galleryImages].reverse()
+  const doubledRowTwo = [...rowTwo, ...rowTwo]
+
+  return (
+    <section className="section gallery-section" ref={sectionRef}>
+      <div className="container">
+        <div className="gallery-heading-row"><SectionHeading eyebrow="FIELD NOTES" title="Moments Worth Exploring" /><button className="gallery-toggle" type="button" onClick={() => setPaused((value) => !value)} aria-pressed={paused}>{paused ? <Play size={16} /> : <Pause size={16} />}{paused ? 'Play gallery' : 'Pause gallery'}</button></div>
+        <div className={paused ? 'moving-gallery is-paused' : 'moving-gallery'}>
+          <div className="moving-row moving-row-one">{rowOne.map((image, index) => <button type="button" key={`row-one-${image.id}-${index}`} onClick={() => setLightboxIndex(index % galleryImages.length)} aria-label={`Open ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /></button>)}</div>
+          <div className="moving-row moving-row-two">{doubledRowTwo.map((image, index) => <button type="button" key={`row-two-${image.id}-${index}`} onClick={() => setLightboxIndex(galleryImages.findIndex((item) => item.id === image.id))} aria-label={`Open ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /></button>)}</div>
+        </div>
+        <div className="section-link"><Link className="text-link" to="/gallery">Visit the gallery <ArrowRight size={17} /></Link></div>
+      </div>
+      {lightboxIndex !== null && <div className="lightbox" role="dialog" aria-modal="true" aria-label="Travel image viewer"><button className="lightbox-backdrop" aria-label="Close image viewer" onClick={() => setLightboxIndex(null)} /><button ref={closeButtonRef} className="lightbox-close" type="button" onClick={() => setLightboxIndex(null)} aria-label="Close"><X size={22} /></button><button className="lightbox-arrow lightbox-prev" type="button" onClick={() => setLightboxIndex((lightboxIndex - 1 + galleryImages.length) % galleryImages.length)} aria-label="Previous image"><ChevronLeft size={24} /></button><img src={galleryImages[lightboxIndex].src} alt={galleryImages[lightboxIndex].alt} /><button className="lightbox-arrow lightbox-next" type="button" onClick={() => setLightboxIndex((lightboxIndex + 1) % galleryImages.length)} aria-label="Next image"><ChevronRight size={24} /></button></div>}
+    </section>
+  )
 }
 
 function Testimonials() {
-  return <section className="section testimonials-section"><div className="container"><SectionHeading eyebrow="TRAVELLER STORIES" title="Stories From Our Travellers" copy="Sample placeholder reviews for development only. Approved testimonials will replace these in a later phase." /><div className="testimonial-grid">{testimonials.map((item) => <article className="testimonial" key={item.id}><div className="testimonial-rating"><div className="stars">{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={14} fill="currentColor" />)}</div><span>Placeholder</span></div><blockquote>“{item.quote}”</blockquote><div className="traveller"><span className="traveller-avatar" aria-hidden="true">{item.name.charAt(0)}</span><p>{item.name}<span>{item.trip}</span></p></div></article>)}</div></div></section>
+  const sectionRef = useRef(null)
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(sectionRef.current.querySelectorAll('.testimonial-heading, .testimonial-swiper'), {
+      y: 24, opacity: 0, duration: 0.7, stagger: 0.12,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 78%', once: true },
+    })
+  }, { scope: sectionRef })
+
+  if (testimonials.length === 0) return null
+
+  return (
+    <section className="section testimonials-section" ref={sectionRef}>
+      <div className="container">
+        <div className="testimonial-heading"><SectionHeading eyebrow="TRAVELLER STORIES" title="Stories From Our Travellers" copy="Sample placeholder reviews for development only. Approved testimonials will replace these in a later phase." /></div>
+        <Swiper className="testimonial-swiper" modules={[Navigation, Pagination, A11y, Keyboard]} slidesPerView={1} spaceBetween={18} navigation={{ nextEl: '.testimonial-next', prevEl: '.testimonial-prev' }} pagination={{ clickable: true, el: '.testimonial-pagination' }} keyboard={{ enabled: true }} breakpoints={{ 681: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }}>
+          {testimonials.map((item) => <SwiperSlide key={item.id}><article className="testimonial"><div className="testimonial-rating"><div className="stars">{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={14} fill="currentColor" />)}</div><span>Placeholder</span></div><blockquote>“{item.quote}”</blockquote><div className="traveller"><span className="traveller-avatar" aria-hidden="true">{item.name.charAt(0)}</span><p>{item.name}<span>{item.trip}</span></p></div></article></SwiperSlide>)}
+        </Swiper>
+        <div className="carousel-controls testimonial-controls"><div className="testimonial-pagination" /><div className="carousel-arrows"><button className="carousel-arrow testimonial-prev" aria-label="Previous testimonial"><ChevronLeft size={18} /></button><button className="carousel-arrow testimonial-next" aria-label="Next testimonial"><ChevronRight size={18} /></button></div></div>
+      </div>
+    </section>
+  )
 }
 
 function Enquiry() {
-  return <section className="enquiry-section"><div className="enquiry-image" /><div className="container enquiry-content"><span className="eyebrow light">YOUR NEXT CHAPTER</span><h2>Your next adventure<br /><em>starts here.</em></h2><p>Tell us where you want to go. This demonstration form is not connected to an enquiry service yet.</p><div className="hero-actions"><Link className="button" to="/contact">Enquire now <ArrowRight size={17} /></Link><a className="text-link light-link" href="https://wa.me/" onClick={(event) => event.preventDefault()}>WhatsApp us <ArrowRight size={17} /></a></div></div></section>
+  const sectionRef = useRef(null)
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(sectionRef.current.querySelectorAll('.enquiry-content > *'), {
+      y: 24, opacity: 0, duration: 0.65, stagger: 0.11,
+      scrollTrigger: { trigger: sectionRef.current, start: 'top 78%', once: true },
+    })
+  }, { scope: sectionRef })
+
+  return <section className="enquiry-section" ref={sectionRef}><div className="enquiry-image" /><div className="container enquiry-content"><span className="eyebrow light">YOUR NEXT CHAPTER</span><h2>Your next adventure<br /><em>starts here.</em></h2><p>Tell us where you want to go. This demonstration form is not connected to an enquiry service yet.</p><div className="hero-actions"><Link className="button" to="/contact">Enquire now <ArrowRight size={17} /></Link><a className="text-link light-link" href="https://wa.me/" onClick={(event) => event.preventDefault()}>WhatsApp us <ArrowRight size={17} /></a></div></div></section>
 }
 
 function Footer() {
-  return <footer className="site-footer"><div className="container footer-grid"><div><Logo /><p className="footer-tagline">{company.tagline}</p></div><div><h3>Explore</h3>{navItems.slice(0, 4).map((item) => <Link key={item.href} to={item.href}>{item.label}</Link>)}</div><div><h3>Contact</h3><span>{company.email}</span><span>{company.phone}</span><span>{company.address}</span></div><div><h3>Stay curious</h3><p>Official social links will be added when supplied by the TRAMPER team.</p></div></div><div className="container footer-bottom"><span>© {currentYear} TRAMPER India. Placeholder content for development.</span><span><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></span></div></footer>
+  const footerRef = useRef(null)
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.from(footerRef.current.querySelectorAll('.footer-grid > *, .footer-bottom'), {
+      y: 18, opacity: 0, duration: 0.55, stagger: 0.06,
+      scrollTrigger: { trigger: footerRef.current, start: 'top 88%', once: true },
+    })
+  }, { scope: footerRef })
+
+  return <footer className="site-footer" ref={footerRef}><div className="container footer-grid"><div><Logo /><p className="footer-tagline">{company.tagline}</p></div><div><h3>Explore</h3>{navItems.slice(0, 4).map((item) => <Link key={item.href} to={item.href}>{item.label}</Link>)}</div><div><h3>Contact</h3><span>{company.email}</span><span>{company.phone}</span><span>{company.address}</span></div><div><h3>Stay curious</h3><p>Official social links will be added when supplied by the TRAMPER team.</p></div></div><div className="container footer-bottom"><span>© {currentYear} TRAMPER India. Placeholder content for development.</span><span><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></span></div></footer>
 }
 
 function Home() {
